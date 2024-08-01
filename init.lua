@@ -896,6 +896,33 @@ require('lazy').setup({
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   --    For additional information, see `:help lazy.nvim-lazy.nvim-structuring-your-plugins`
   -- { import = 'custom.plugins' },
+  {
+    'akinsho/toggleterm.nvim',
+    version = '*',
+    config = {
+      size = 20,
+      open_mapping = [[<C-\>]], -- This sets Ctrl + \ as the toggle keybinding
+      hide_numbers = true, -- Hide the number column in toggleterm buffers
+      shade_filetypes = {},
+      shade_terminals = true,
+      shading_factor = 2,
+      start_in_insert = true,
+      insert_mappings = true, -- Apply the open mapping in insert mode
+      terminal_mappings = true, -- Apply the open mapping in the opened terminals
+      persist_size = true,
+      direction = 'float', -- You can also set 'horizontal' or 'vertical'
+      close_on_exit = true, -- Close the terminal window when the process exits
+      shell = vim.o.shell, -- Change the default shell
+      float_opts = {
+        border = 'curved',
+        winblend = 0,
+        highlights = {
+          border = 'Normal',
+          background = 'Normal',
+        },
+      },
+    },
+  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
