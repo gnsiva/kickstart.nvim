@@ -923,6 +923,13 @@ require('lazy').setup({
       },
     },
   },
+  {
+    'nvim-tree/nvim-tree.lua',
+    config = function()
+      require('nvim-tree').setup()
+      vim.keymap.set('n', '<C-n>', ':NvimTreeToggle <CR>', { desc = 'Hide/show tree view' })
+    end,
+  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
