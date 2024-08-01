@@ -994,6 +994,17 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>er', ":lua require('dap').repl.open()<CR>", { desc = 'Open [r]epl', noremap = true, silent = true })
     end,
   },
+  {
+    'rcarriga/nvim-dap-ui',
+    dependencies = {
+      'nvim-neotest/nvim-nio',
+      'mfussenegger/nvim-dap',
+    },
+    config = function()
+      require('dapui').setup()
+      vim.keymap.set('n', '<leader>ex', ':lua require("dapui").toggle()<CR>', { desc = 'Toggle DAP UI' })
+    end,
+  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
