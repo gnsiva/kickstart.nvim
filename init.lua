@@ -965,27 +965,36 @@ require('lazy').setup({
       )
       vim.keymap.set('n', '<leader>es', ":lua require('neotest').summary.toggle()<CR>", { desc = 'Show [s]ummary', noremap = true, silent = true })
       vim.keymap.set('n', '<leader>et', ":lua require('neotest').run.stop()<CR>", { desc = 'S[t]op test', noremap = true, silent = true })
-    end,
-  },
-  {
-    'mfussenegger/nvim-dap',
-    dependencies = {
-      'mfussenegger/nvim-dap-python',
-      'nvim-neotest/neotest',
-    },
-    config = function()
-      require('dap-python').setup 'python'
-      require('dap-python').test_runner = 'pytest'
 
+      -- run debuging from neotest, doesn't work as well as using nvim-dap-python atm
       vim.keymap.set(
         'n',
         '<leader>ed',
         ":lua require('neotest').run.run({ strategy = 'dap' })<CR>",
         { desc = '[D]ebug nearest test', noremap = true, silent = true }
       )
+    end,
+  },
+  {
+    'mfussenegger/nvim-dap-python',
+    dependencies = {
+      'mfussenegger/nvim-dap',
+    },
+    config = function()
+      require('dap-python').setup 'python'
+      require('dap-python').test_runner = 'pytest'
 
       -- directly using dap-python instead of via neotest
       vim.keymap.set('n', '<leader>em', ":lua require('dap-python').test_method()<CR>", { desc = 'Debug nearest [m]ethod', noremap = true, silent = true })
+    end,
+  },
+  {
+    'mfussenegger/nvim-dap',
+    dependencies = {
+      'nvim-neotest/neotest',
+    },
+    config = function()
+      -- directly using dap-python instead of via neotest
       vim.keymap.set('n', '<leader>eb', ":lua require('dap').toggle_breakpoint()<CR>", { desc = 'Toggle [b]reakpoint', noremap = true, silent = true })
       vim.keymap.set('n', '<leader>eb', ":lua require('dap').toggle_breakpoint()<CR>", { desc = 'Toggle [b]reakpoint', noremap = true, silent = true })
       vim.keymap.set('n', '<leader>e8', ":lua require('dap').step_over()<CR>", { desc = 'Step over', noremap = true, silent = true })
