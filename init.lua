@@ -931,6 +931,48 @@ require('lazy').setup({
       vim.keymap.set('n', '<C-n>', ':NvimTreeToggle <CR>', { desc = 'Hide/show tree view' })
     end,
   },
+  {
+    'nvim-neotest/neotest',
+    dependencies = {
+      'nvim-neotest/nvim-nio',
+      'nvim-lua/plenary.nvim',
+      'antoinemadec/FixCursorHold.nvim',
+      'nvim-treesitter/nvim-treesitter',
+      'nvim-neotest/neotest-python',
+    },
+    config = function()
+      require('neotest').setup {
+        adapters = {
+          require 'neotest-python',
+        },
+      }
+
+      vim.keymap.set('n', '<leader>en', ":lua require('neotest').run.run()<CR>", { desc = 'Run [n]earest test', noremap = true, silent = true })
+      -- there is also output_panel, but that doesn't move your cursor in there automatically which sucks
+      -- there isn't an option for it at the momeny. Could maybe use an autocommand for it?
+      vim.keymap.set(
+        'n',
+        '<leader>eo',
+        ":lua require('neotest').output.open({ enter = true })<CR>",
+        { desc = 'Show test [o]utput', noremap = true, silent = true }
+      )
+      vim.keymap.set('n', '<leader>ea', ":lua require('neotest').run.attach()<CR>", { desc = '[A]ttach to nearest test', noremap = true, silent = true })
+      vim.keymap.set(
+        'n',
+        '<leader>ef',
+        ":lua require('neotest').run.run(vim.fn.expand('%'))<CR>",
+        { desc = 'Run all tests in [f]ile', noremap = true, silent = true }
+      )
+      vim.keymap.set('n', '<leader>es', ":lua require('neotest').summary.toggle()<CR>", { desc = 'Show [s]ummary', noremap = true, silent = true })
+      vim.keymap.set('n', '<leader>et', ":lua require('neotest').run.stop()<CR>", { desc = 'S[t]op test', noremap = true, silent = true })
+      vim.keymap.set(
+        'n',
+        '<leader>ed',
+        ":lua require('neotest').run.run({ strategy = 'dap' })<CR>",
+        { desc = '[D]ebug nearest test', noremap = true, silent = true }
+      )
+    end,
+  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
