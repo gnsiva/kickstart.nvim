@@ -1014,6 +1014,13 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>ex', ':lua require("dapui").toggle()<CR>', { desc = 'Toggle DAP UI' })
     end,
   },
+  {
+    'declancm/maximize.nvim',
+    config = function()
+      require('maximize').setup()
+      vim.keymap.set('n', '<leader>z', ':lua require("maximize").toggle()<CR>', { desc = 'Toggle maximize window' })
+    end,
+  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
