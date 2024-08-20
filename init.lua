@@ -929,6 +929,7 @@ require('lazy').setup({
     config = function()
       require('nvim-tree').setup()
       vim.keymap.set('n', '<C-n>', ':NvimTreeToggle <CR>', { desc = 'Hide/show tree view' })
+      vim.keymap.set('n', '<leader>st', ':NvimTreeFindFile <CR>', { desc = '[S]earch current file in [T]ree' })
     end,
   },
   {
