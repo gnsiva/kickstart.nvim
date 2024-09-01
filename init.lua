@@ -91,7 +91,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -190,6 +190,9 @@ vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right win
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
+-- My keymaps
+vim.keymap.set('i', 'fd', '<Esc>', { desc = 'Shortcut to go into normal mode' })
+
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -207,7 +210,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
-if not vim.uv.fs_stat(lazypath) then
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
   local lazyrepo = 'https://github.com/folke/lazy.nvim.git'
   local out = vim.fn.system { 'git', 'clone', '--filter=blob:none', '--branch=stable', lazyrepo, lazypath }
   if vim.v.shell_error ~= 0 then
@@ -274,20 +277,56 @@ require('lazy').setup({
   { -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
-    config = function() -- This is the function that runs, AFTER loading
-      require('which-key').setup()
+    opts = {
+      icons = {
+        -- set icon mappings to true if you have a Nerd Font
+        mappings = vim.g.have_nerd_font,
+        -- If you are using a Nerd Font: set icons.keys to an empty table which will use the
+        -- default whick-key.nvim defined Nerd Font icons, otherwise define a string table
+        keys = vim.g.have_nerd_font and {} or {
+          Up = '<Up> ',
+          Down = '<Down> ',
+          Left = '<Left> ',
+          Right = '<Right> ',
+          C = '<C-…> ',
+          M = '<M-…> ',
+          D = '<D-…> ',
+          S = '<S-…> ',
+          CR = '<CR> ',
+          Esc = '<Esc> ',
+          ScrollWheelDown = '<ScrollWheelDown> ',
+          ScrollWheelUp = '<ScrollWheelUp> ',
+          NL = '<NL> ',
+          BS = '<BS> ',
+          Space = '<Space> ',
+          Tab = '<Tab> ',
+          F1 = '<F1>',
+          F2 = '<F2>',
+          F3 = '<F3>',
+          F4 = '<F4>',
+          F5 = '<F5>',
+          F6 = '<F6>',
+          F7 = '<F7>',
+          F8 = '<F8>',
+          F9 = '<F9>',
+          F10 = '<F10>',
+          F11 = '<F11>',
+          F12 = '<F12>',
+        },
+      },
 
       -- Document existing key chains
-      require('which-key').add {
-        { '<leader>c', group = '[C]ode' },
+      spec = {
+        { '<leader>c', group = '[C]ode', mode = { 'n', 'x' } },
         { '<leader>d', group = '[D]ocument' },
         { '<leader>r', group = '[R]ename' },
         { '<leader>s', group = '[S]earch' },
         { '<leader>w', group = '[W]orkspace' },
         { '<leader>t', group = '[T]oggle' },
+        { '<leader>e', group = 'T[e]st' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
-      }
-    end,
+      },
+    },
   },
 
   -- NOTE: Plugins can specify dependencies.
@@ -470,8 +509,9 @@ require('lazy').setup({
           --
           -- In this case, we create a function that lets us more easily define mappings specific
           -- for LSP related items. It sets the mode, buffer and description for us each time.
-          local map = function(keys, func, desc)
-            vim.keymap.set('n', keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
+          local map = function(keys, func, desc, mode)
+            mode = mode or 'n'
+            vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
           end
 
           -- Jump to the definition of the word under your cursor.
@@ -505,7 +545,7 @@ require('lazy').setup({
 
           -- Execute a code action, usually your cursor needs to be on top of an error
           -- or a suggestion from your LSP for this to activate.
-          map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
+          map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction', { 'n', 'x' })
 
           -- WARN: This is not Goto Definition, this is Goto Declaration.
           --  For example, in C this would take you to the header.
@@ -571,7 +611,7 @@ require('lazy').setup({
       local servers = {
         -- clangd = {},
         -- gopls = {},
-        -- pyright = {},
+        pyright = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -637,7 +677,7 @@ require('lazy').setup({
       {
         '<leader>f',
         function()
-          require('conform').format { async = true, lsp_fallback = true }
+          require('conform').format { async = true, lsp_format = 'fallback' }
         end,
         mode = '',
         desc = '[F]ormat buffer',
@@ -650,9 +690,15 @@ require('lazy').setup({
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.
         local disable_filetypes = { c = true, cpp = true }
+        local lsp_format_opt
+        if disable_filetypes[vim.bo[bufnr].filetype] then
+          lsp_format_opt = 'never'
+        else
+          lsp_format_opt = 'fallback'
+        end
         return {
           timeout_ms = 500,
-          lsp_fallback = not disable_filetypes[vim.bo[bufnr].filetype],
+          lsp_format = lsp_format_opt,
         }
       end,
       formatters_by_ft = {
@@ -733,7 +779,7 @@ require('lazy').setup({
           -- Accept ([y]es) the completion.
           --  This will auto-import if your LSP supports it.
           --  This will expand snippets if the LSP sent a snippet.
-          ['<C-y>'] = cmp.mapping.confirm { select = true },
+          ['<Tab>'] = cmp.mapping.confirm { select = true },
 
           -- If you prefer more traditional completion keymaps,
           -- you can uncomment the following lines
@@ -843,8 +889,10 @@ require('lazy').setup({
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
+    main = 'nvim-treesitter.configs', -- Sets main module to use for opts
+    -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'python' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -856,19 +904,12 @@ require('lazy').setup({
       },
       indent = { enable = true, disable = { 'ruby' } },
     },
-    config = function(_, opts)
-      -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
-
-      ---@diagnostic disable-next-line: missing-fields
-      require('nvim-treesitter.configs').setup(opts)
-
-      -- There are additional nvim-treesitter modules that you can use to interact
-      -- with nvim-treesitter. You should go explore a few and see what interests you:
-      --
-      --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
-      --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
-      --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
-    end,
+    -- There are additional nvim-treesitter modules that you can use to interact
+    -- with nvim-treesitter. You should go explore a few and see what interests you:
+    --
+    --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
+    --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
+    --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
   },
 
   -- The following two comments only work if you have downloaded the kickstart repo, not just copy pasted the
@@ -893,6 +934,131 @@ require('lazy').setup({
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   --    For additional information, see `:help lazy.nvim-lazy.nvim-structuring-your-plugins`
   -- { import = 'custom.plugins' },
+  {
+    'akinsho/toggleterm.nvim',
+    version = '*',
+    config = {
+      size = 20,
+      open_mapping = [[<C-\>]], -- This sets Ctrl + \ as the toggle keybinding
+      hide_numbers = true, -- Hide the number column in toggleterm buffers
+      shade_filetypes = {},
+      shade_terminals = true,
+      shading_factor = 2,
+      start_in_insert = true,
+      insert_mappings = true, -- Apply the open mapping in insert mode
+      terminal_mappings = true, -- Apply the open mapping in the opened terminals
+      persist_size = true,
+      direction = 'float', -- You can also set 'horizontal' or 'vertical'
+      close_on_exit = true, -- Close the terminal window when the process exits
+      shell = vim.o.shell, -- Change the default shell
+      float_opts = {
+        border = 'curved',
+        winblend = 0,
+        highlights = {
+          border = 'Normal',
+          background = 'Normal',
+        },
+      },
+    },
+  },
+  {
+    'nvim-tree/nvim-tree.lua',
+    config = function()
+      require('nvim-tree').setup()
+      vim.keymap.set('n', '<C-n>', ':NvimTreeToggle <CR>', { desc = 'Hide/show tree view' })
+      vim.keymap.set('n', '<leader>st', ':NvimTreeFindFile <CR>', { desc = '[S]earch current file in [T]ree' })
+    end,
+  },
+  {
+    'nvim-neotest/neotest',
+    dependencies = {
+      'nvim-neotest/nvim-nio',
+      'nvim-lua/plenary.nvim',
+      'antoinemadec/FixCursorHold.nvim',
+      'nvim-treesitter/nvim-treesitter',
+      'nvim-neotest/neotest-python',
+    },
+    config = function()
+      require('neotest').setup {
+        adapters = {
+          require 'neotest-python',
+        },
+      }
+
+      vim.keymap.set('n', '<leader>en', ":lua require('neotest').run.run()<CR>", { desc = 'Run [n]earest test', noremap = true, silent = true })
+      -- there is also output_panel, but that doesn't move your cursor in there automatically which sucks
+      -- there isn't an option for it at the momeny. Could maybe use an autocommand for it?
+      vim.keymap.set(
+        'n',
+        '<leader>eo',
+        ":lua require('neotest').output.open({ enter = true })<CR>",
+        { desc = 'Show test [o]utput', noremap = true, silent = true }
+      )
+      vim.keymap.set('n', '<leader>ea', ":lua require('neotest').run.attach()<CR>", { desc = '[A]ttach to nearest test', noremap = true, silent = true })
+      vim.keymap.set(
+        'n',
+        '<leader>ef',
+        ":lua require('neotest').run.run(vim.fn.expand('%'))<CR>",
+        { desc = 'Run all tests in [f]ile', noremap = true, silent = true }
+      )
+      vim.keymap.set('n', '<leader>es', ":lua require('neotest').summary.toggle()<CR>", { desc = 'Show [s]ummary', noremap = true, silent = true })
+      vim.keymap.set('n', '<leader>et', ":lua require('neotest').run.stop()<CR>", { desc = 'S[t]op test', noremap = true, silent = true })
+
+      -- run debuging from neotest, doesn't work as well as using nvim-dap-python atm
+      vim.keymap.set(
+        'n',
+        '<leader>ed',
+        ":lua require('neotest').run.run({ strategy = 'dap' })<CR>",
+        { desc = '[D]ebug nearest test', noremap = true, silent = true }
+      )
+    end,
+  },
+  {
+    'mfussenegger/nvim-dap-python',
+    dependencies = {
+      'mfussenegger/nvim-dap',
+    },
+    config = function()
+      require('dap-python').setup 'python'
+      require('dap-python').test_runner = 'pytest'
+
+      -- directly using dap-python instead of via neotest
+      vim.keymap.set('n', '<leader>em', ":lua require('dap-python').test_method()<CR>", { desc = 'Debug nearest [m]ethod', noremap = true, silent = true })
+    end,
+  },
+  {
+    'mfussenegger/nvim-dap',
+    dependencies = {
+      'nvim-neotest/neotest',
+    },
+    config = function()
+      -- directly using dap-python instead of via neotest
+      vim.keymap.set('n', '<leader>eb', ":lua require('dap').toggle_breakpoint()<CR>", { desc = 'Toggle [b]reakpoint', noremap = true, silent = true })
+      vim.keymap.set('n', '<leader>eb', ":lua require('dap').toggle_breakpoint()<CR>", { desc = 'Toggle [b]reakpoint', noremap = true, silent = true })
+      vim.keymap.set('n', '<leader>e8', ":lua require('dap').step_over()<CR>", { desc = 'Step over', noremap = true, silent = true })
+      vim.keymap.set('n', '<leader>e7', ":lua require('dap').step_into()<CR>", { desc = 'Step over', noremap = true, silent = true })
+      vim.keymap.set('n', '<leader>ec', ":lua require('dap').continue()<CR>", { desc = '[C]ontinue execution', noremap = true, silent = true })
+      vim.keymap.set('n', '<leader>er', ":lua require('dap').repl.open()<CR>", { desc = 'Open [r]epl', noremap = true, silent = true })
+    end,
+  },
+  {
+    'rcarriga/nvim-dap-ui',
+    dependencies = {
+      'nvim-neotest/nvim-nio',
+      'mfussenegger/nvim-dap',
+    },
+    config = function()
+      require('dapui').setup()
+      vim.keymap.set('n', '<leader>ex', ':lua require("dapui").toggle()<CR>', { desc = 'Toggle DAP UI' })
+    end,
+  },
+  {
+    'declancm/maximize.nvim',
+    config = function()
+      require('maximize').setup()
+      vim.keymap.set('n', '<leader>z', ':lua require("maximize").toggle()<CR>', { desc = 'Toggle maximize window' })
+    end,
+  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
